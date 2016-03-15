@@ -81,6 +81,7 @@ public class MagneticGuides extends JFrame {
 						  }
 				   } ;
 				   
+				   //faire un autre état dans la translation des magneticGuide pour éviter les lags
 				   Transition Gdrag = new DragOnTag(STag, BUTTON1) {
 						  public void action() {
 							 Point2D q = getPoint() ;
