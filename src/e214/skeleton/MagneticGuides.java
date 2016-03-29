@@ -15,6 +15,7 @@ import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.canvas.transitions.DragOnTag;
 import fr.lri.swingstates.canvas.transitions.PressOnTag;
 import fr.lri.swingstates.canvas.transitions.ReleaseOnTag;
+import fr.lri.swingstates.debug.StateMachineVisualization;
 import fr.lri.swingstates.sm.State;
 import fr.lri.swingstates.sm.Transition;
 import fr.lri.swingstates.sm.transitions.Press;
@@ -25,25 +26,32 @@ import fr.lri.swingstates.sm.transitions.Release;
  *
  */
 public class MagneticGuides extends JFrame {
-
+	//ATTRIBUTS
     private Canvas canvas ;
     private CExtensionalTag oTag ;
-    private CExtensionalTag STag ;
+    private CExtensionalTag hGuide ;
+    private CExtensionalTag vGuide;
+    private CStateMachine sm;
+    private boolean trace;
 
+    /** Constructor */
     public MagneticGuides(String title, int width, int height) {
 	   super(title) ;
 	   canvas = new Canvas(width, height) ;
 	   canvas.setAntialiased(true) ;
 	   getContentPane().add(canvas) ;
+	   trace = true;
 
 	   oTag = new CExtensionalTag(canvas) {} ;
-	   STag = new CExtensionalTag(canvas) {} ;
+	   hGuide = new CExtensionalTag(canvas) {};
+	   vGuide = new CExtensionalTag(canvas) {};
 
-	   CStateMachine sm = new CStateMachine() {
-
+	   //StateMachine
+	   sm = new CStateMachine() {
 			 private Point2D p ;
 			 private CShape draggedShape ;
 
+			 //when nothing happen
 			 public State start = new State() {
 				    Transition pressOnObject = new PressOnTag(oTag, BUTTON1, ">> oDrag") {
 						  public void action() {
@@ -53,7 +61,14 @@ public class MagneticGuides extends JFrame {
 						  }
 					 };
 					 
-					 Transition pressOnGuide = new PressOnTag(STag, BUTTON1, ">> oDrag") {
+					 Transition pressOnHGuide = new PressOnTag(hGuide, BUTTON1, ">> hDrag") {
+						  public void action() {
+							 p = getPoint() ;
+							 draggedShape = getShape() ;
+						  }
+					 };
+					 
+					 Transition pressOnVGuide = new PressOnTag(vGuide, BUTTON1, ">> vDrag") {
 						  public void action() {
 							 p = getPoint() ;
 							 draggedShape = getShape() ;
@@ -63,12 +78,41 @@ public class MagneticGuides extends JFrame {
 					 Transition click = new Press() {
     					public void action() {
     						p = getPoint();
-    						new MagneticGuide(canvas, p);
+    						new MagneticGuide(canvas, p, trace);
+    						trace = !trace;
     					}
     				};
-				} ;
+			} ;
 
-			 public State oDrag = new State() {
+			//try to drag an horizontal guide
+			public State hDrag = new State(){
+				Transition Gdrag = new DragOnTag(hGuide, BUTTON1) {
+					public void action() {
+							Point2D q = getPoint() ;
+							draggedShape.translateBy(0, q.getY() - p.getY()) ;
+							p = q ;
+					}
+				};
+				
+				Transition release = new Release(BUTTON1, ">> start") {} ;
+			};
+			
+			//try to drag a vertical guide
+			public State vDrag = new State(){
+				//faire un autre état dans la translation des magneticGuide pour éviter les lags
+				Transition Gdrag = new DragOnTag(hGuide, BUTTON1) {
+					public void action() {
+							Point2D q = getPoint() ;
+							draggedShape.translateBy(q.getX() - p.getX(), 0) ;
+							p = q ;
+					}
+				};
+				
+				Transition release = new Release(BUTTON1, ">> start") {} ;
+			};
+			
+			//try to drag a square
+			public State oDrag = new State() {
 				    Transition drag = new DragOnTag(oTag, BUTTON1) {
 						  public void action() {
 							 Point2D q = getPoint() ;
@@ -76,25 +120,16 @@ public class MagneticGuides extends JFrame {
 							 p = q ;
 							 Point2D shapeCenter = getShapeCenter(draggedShape);
 							 List<CShape> guides = canvas.pickAll(shapeCenter);
-							 if (!guides.isEmpty())
-								 r;
-						  }
-				   } ;
-				   
-				   //faire un autre état dans la translation des magneticGuide pour éviter les lags
-				   Transition Gdrag = new DragOnTag(STag, BUTTON1) {
-						  public void action() {
-							 Point2D q = getPoint() ;
-							 draggedShape.translateBy(0, q.getY() - p.getY()) ;
-							 p = q ;
+							 /*if (!guides.isEmpty())
+								 r;*/
 						  }
 				   } ;
 				   
 				   Transition release = new Release(BUTTON1, ">> start") {} ;
 				    
-				    Transition releaseOnGuide = new ReleaseOnTag(STag, BUTTON1, ">>start") {
+				    Transition releaseOnGuide = new ReleaseOnTag(hGuide, BUTTON1, ">>start") {
 				    	public void action(){
-				    		draggedShape.addTag(STag);
+				    		draggedShape.addTag(hGuide);
 				    	}				    	
 				    };
 				} ;
@@ -132,15 +167,26 @@ public class MagneticGuides extends JFrame {
 	   MagneticGuides guides = new MagneticGuides("Magnetic guides",600,600) ;
 	   for (int i=0; i<20; ++i) guides.populate() ;
 	   guides.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE) ;
+	   
+	   JFrame visual = new JFrame();
+	   visual.getContentPane().add(new StateMachineVisualization(guides.sm));
+	   visual.setLocation(500, 500);
+	   visual.pack();
+	   visual.setVisible(true);
     }
     
     public class MagneticGuide extends CExtensionalTag {
     	
     	CSegment seg;
     	
-    	public MagneticGuide(Canvas canva, Point2D p) {
-    		seg = canva.newSegment(0.0, p.getY(), 2000.0, p.getY());
-    		seg.addTag(STag);
+    	public MagneticGuide(Canvas canva, Point2D p, boolean trace) {
+    		if(trace){
+    			seg = canva.newSegment(0.0, p.getY(), 2000.0, p.getY());
+    			seg.addTag(hGuide);
+    		} else{
+    			seg = canva.newSegment(p.getX(), 0.0, p.getX(), 2000.0);
+    			seg.addTag(vGuide);
+    		}
     	}
     	
     }
