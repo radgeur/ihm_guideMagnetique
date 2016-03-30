@@ -12,12 +12,11 @@ import fr.lri.swingstates.canvas.CSegment;
 import fr.lri.swingstates.canvas.CShape;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.Canvas;
-import fr.lri.swingstates.canvas.transitions.DragOnTag;
 import fr.lri.swingstates.canvas.transitions.PressOnTag;
-import fr.lri.swingstates.canvas.transitions.ReleaseOnTag;
 import fr.lri.swingstates.debug.StateMachineVisualization;
 import fr.lri.swingstates.sm.State;
 import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Drag;
 import fr.lri.swingstates.sm.transitions.Press;
 import fr.lri.swingstates.sm.transitions.Release;
 
@@ -86,7 +85,7 @@ public class MagneticGuides extends JFrame {
 
 			//try to drag an horizontal guide
 			public State hDrag = new State(){
-				Transition Gdrag = new DragOnTag(hGuide, BUTTON1) {
+				Transition Gdrag = new Drag(BUTTON1) {
 					public void action() {
 							Point2D q = getPoint() ;
 							draggedShape.translateBy(0, q.getY() - p.getY()) ;
@@ -99,8 +98,7 @@ public class MagneticGuides extends JFrame {
 			
 			//try to drag a vertical guide
 			public State vDrag = new State(){
-				//faire un autre état dans la translation des magneticGuide pour éviter les lags
-				Transition Gdrag = new DragOnTag(hGuide, BUTTON1) {
+				Transition Gdrag = new Drag(BUTTON1) {
 					public void action() {
 							Point2D q = getPoint() ;
 							draggedShape.translateBy(q.getX() - p.getX(), 0) ;
@@ -113,25 +111,27 @@ public class MagneticGuides extends JFrame {
 			
 			//try to drag a square
 			public State oDrag = new State() {
-				    Transition drag = new DragOnTag(oTag, BUTTON1) {
+				    Transition drag = new Drag(BUTTON1) {
 						  public void action() {
 							 Point2D q = getPoint() ;
 							 draggedShape.translateBy(q.getX() - p.getX(), q.getY() - p.getY()) ;
 							 p = q ;
-							 Point2D shapeCenter = getShapeCenter(draggedShape);
-							 List<CShape> guides = canvas.pickAll(shapeCenter);
-							 /*if (!guides.isEmpty())
-								 r;*/
 						  }
 				   } ;
 				   
-				   Transition release = new Release(BUTTON1, ">> start") {} ;
-				    
-				    Transition releaseOnGuide = new ReleaseOnTag(hGuide, BUTTON1, ">>start") {
-				    	public void action(){
-				    		draggedShape.addTag(hGuide);
-				    	}				    	
-				    };
+				   Transition release = new Release(BUTTON1, ">> start") {
+					   public void action() {
+						   Point2D shapeCenter = getShapeCenter(draggedShape);
+						   List<CShape> guides = canvas.pickAll(shapeCenter);
+						   if (!guides.isEmpty()){
+							   guides.remove(draggedShape);
+							   System.out.println(guides.size());
+							   for(CShape shape : guides)
+								   if(shape instanceof CSegment)
+									   shape.addChild(draggedShape);
+						   }
+					   }
+				   };
 				} ;
 
 		  } ;

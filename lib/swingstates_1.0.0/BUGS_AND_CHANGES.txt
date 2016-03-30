@@ -1,0 +1,7 @@
+SwingStates, Version 1.0.0
+
+Copyright (c) Université Paris-Sud XI, 2007.
+
+- minor fixes (remove print statements, add toString method to named tags (CNamedTag and JNamedTag))
+
+- add maven support
