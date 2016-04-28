@@ -2,6 +2,7 @@ package e214.skeleton ;
 
 import java.awt.Color;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JFrame;
@@ -31,7 +32,8 @@ public class MagneticGuides extends JFrame {
     private CExtensionalTag hGuide ;
     private CExtensionalTag vGuide;
     private CStateMachine sm;
-    private boolean trace;
+    private boolean trace, hidden;
+    private List<MagneticGuide> allGuides;
 
     /** Constructor */
     public MagneticGuides(String title, int width, int height) {
@@ -40,10 +42,13 @@ public class MagneticGuides extends JFrame {
 	   canvas.setAntialiased(true) ;
 	   getContentPane().add(canvas) ;
 	   trace = true;
+	   hidden = false;
 
 	   oTag = new CExtensionalTag(canvas) {} ;
 	   hGuide = new CExtensionalTag(canvas) {};
 	   vGuide = new CExtensionalTag(canvas) {};
+	   
+	   allGuides = new ArrayList<MagneticGuide>();
 
 	   //StateMachine
 	   sm = new CStateMachine() {
@@ -63,8 +68,14 @@ public class MagneticGuides extends JFrame {
 					 Transition pressOnHGuide = new PressOnTag(hGuide, BUTTON1, ">> hDrag") {
 						  public void action() {
 							 p = getPoint() ;
-							 draggedShape = getShape() ;
+							 draggedShape = getShape();
 						  }
+					 };
+					 
+					 Transition deleteHGuide = new PressOnTag(hGuide, BUTTON2){
+						 public void action(){
+							 getShape().remove();
+						 }
 					 };
 					 
 					 Transition pressOnVGuide = new PressOnTag(vGuide, BUTTON1, ">> vDrag") {
@@ -73,12 +84,33 @@ public class MagneticGuides extends JFrame {
 							 draggedShape = getShape() ;
 						  }
 					 };
+					 
+					 Transition deleteVGuide = new PressOnTag(vGuide, BUTTON2){
+						 public void action(){
+							 getShape().remove();
+						 }
+					 };
 					   
 					 Transition click = new Press() {
     					public void action() {
     						p = getPoint();
-    						new MagneticGuide(canvas, p, trace);
+    						MagneticGuide g = new MagneticGuide(canvas, p, trace);
     						trace = !trace;
+    						allGuides.add(g);
+    					}
+    				};
+    				
+    				Transition hideGuides = new Press(BUTTON3){
+    					public void action(){
+	    					if(hidden){
+	    						for(MagneticGuide g : allGuides) {
+	    							g.setDrawable(true);
+	    						}
+	    					}else {
+	    						for(MagneticGuide g : allGuides) {
+	    							g.setDrawable(false);
+	    						}
+	    					}
     					}
     				};
 			} ;
@@ -171,6 +203,7 @@ public class MagneticGuides extends JFrame {
 	   JFrame visual = new JFrame();
 	   visual.getContentPane().add(new StateMachineVisualization(guides.sm));
 	   visual.setLocation(500, 500);
+	   visual.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE) ;
 	   visual.pack();
 	   visual.setVisible(true);
     }
