@@ -91,7 +91,7 @@ public class MagneticGuides extends JFrame {
 						 }
 					 };
 					   
-					 Transition click = new Press() {
+					 Transition click = new Press(BUTTON1) {
     					public void action() {
     						p = getPoint();
     						MagneticGuide g = new MagneticGuide(canvas, p, trace);
@@ -102,15 +102,10 @@ public class MagneticGuides extends JFrame {
     				
     				Transition hideGuides = new Press(BUTTON3){
     					public void action(){
-	    					if(hidden){
-	    						for(MagneticGuide g : allGuides) {
-	    							g.setDrawable(true);
-	    						}
-	    					}else {
-	    						for(MagneticGuide g : allGuides) {
-	    							g.setDrawable(false);
-	    						}
-	    					}
+    						for(MagneticGuide g : allGuides) {
+    							g.hidde(hidden);
+    						}
+    						hidden = !hidden;
     					}
     				};
 			} ;
@@ -220,6 +215,10 @@ public class MagneticGuides extends JFrame {
     			seg = canva.newSegment(p.getX(), 0.0, p.getX(), 2000.0);
     			seg.addTag(vGuide);
     		}
+    	}
+    	
+    	public void hidde(Boolean b) {
+    		seg.setDrawable(b);
     	}
     	
     }
