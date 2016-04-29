@@ -74,6 +74,7 @@ public class MagneticGuides extends JFrame {
 					 
 					 Transition deleteHGuide = new PressOnTag(hGuide, BUTTON2){
 						 public void action(){
+							 allGuides.remove(getShape());
 							 getShape().remove();
 						 }
 					 };
@@ -87,6 +88,7 @@ public class MagneticGuides extends JFrame {
 					 
 					 Transition deleteVGuide = new PressOnTag(vGuide, BUTTON2){
 						 public void action(){
+							 allGuides.remove(getShape());
 							 getShape().remove();
 						 }
 					 };
